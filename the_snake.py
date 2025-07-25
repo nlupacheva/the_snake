@@ -69,7 +69,7 @@ class GameObject:
         Raises:
             NotImplementedError: If not implemented in a subclass.
         """
-        raise NotImplementedError("В дочернем классе не реализован метод draw")
+        raise NotImplementedError('В дочернем классе не реализован метод draw')
 
 
 class Apple(GameObject):
@@ -224,18 +224,18 @@ class GameInfo:
         line_height = 40
 
         # Заголовок
-        title = self.font.render("Статистика", True, (255, 255, 255))
+        title = self.font.render('Статистика', True, (255, 255, 255))
         screen.blit(title, (x_pos, y_pos))
         y_pos += line_height
 
         # Длина змейки
         length_text = self.font.render(
-            f"Длина: {snake_length}", True, (255, 255, 255))
+            f'Длина: {snake_length}', True, (255, 255, 255))
         screen.blit(length_text, (x_pos, y_pos))
         y_pos += line_height
 
         # Очки
-        score_text = self.font.render(f"Очки: {score}", True, (255, 255, 255))
+        score_text = self.font.render(f'Очки: {score}', True, (255, 255, 255))
         screen.blit(score_text, (x_pos, y_pos))
         y_pos += line_height
 
@@ -272,7 +272,7 @@ def pause_game():
     """
     font = pygame.font.Font(None, 36)
     text = font.render(
-        "Game Over. Press any key to continue...", True, (255, 255, 255))
+        'Game Over. Press any key to continue...', True, (255, 255, 255))
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(text, text_rect)
     pygame.display.flip()
