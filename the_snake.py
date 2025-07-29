@@ -105,7 +105,7 @@ class Apple(GameObject):
         pg.draw.rect(screen, self.body_color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
-    def __init__(self, occupied_positions, body_color=APPLE_COLOR,
+    def __init__(self, occupied_positions=None, body_color=APPLE_COLOR,
                  position=None):
         """
         Initialize the apple with a random position and color.
