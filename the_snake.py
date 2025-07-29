@@ -1,6 +1,6 @@
-from random import randint
+from random import randint, choice
 
-import pygame
+import pygame as pg
 
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -9,7 +9,8 @@ GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 INFO_PANEL_WIDTH = 200  # Ширина информационной панели
 GAME_WIDTH = SCREEN_WIDTH - INFO_PANEL_WIDTH  # Ширина игрового поля
 GRID_WIDTH = GAME_WIDTH // GRID_SIZE  # Количество ячеек по горизонтали
-FIELD_BORDER_COLOR = (255, 0, 0)  # Красный
+FIELD_BORDER_COLOR = (255, 0, 0)
+FIELD_CENTER = GRID_WIDTH // 2, GRID_HEIGHT // 2
 
 # Направления движения:
 UP = (0, -1)
@@ -28,21 +29,23 @@ APPLE_COLOR = (255, 0, 0)
 
 # Цвет змейки
 SNAKE_COLOR = (0, 255, 0)
+SEP_COLOR = (100, 100, 100)
+PANEL_COLOR = (40, 40, 40)
+FONT_COLOR = (255, 255, 255)
 
 # Скорость движения змейки:
 SPEED = 10
 
 # Настройка игрового окна:
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
 # Заголовок окна игрового поля:
-pygame.display.set_caption('Змейка')
+pg.display.set_caption('Змейка')
 
 # Настройка времени:
-clock = pygame.time.Clock()
+clock = pg.time.Clock()
 
 
-# Тут опишите все классы игры.
 class GameObject:
     """
     Base class for all game objects.
@@ -52,14 +55,14 @@ class GameObject:
         body_color (tuple): The color of the object.
     """
 
-    def __init__(self, body_color=None):
+    def __init__(self, body_color=None, position=FIELD_CENTER):
         """
         Initialize the base game object.
 
         Args:
             body_color (tuple, optional): RGB color for the object.
         """
-        self.position = (GRID_WIDTH // 2, GRID_HEIGHT // 2)
+        self.position = position
         self.body_color = body_color
 
     def draw(self):
@@ -79,28 +82,39 @@ class Apple(GameObject):
     Inherits from GameObject.
     """
 
-    def randomize_position(self):
-        """Randomly creates the apple position on the game board."""
-        self.position = (randint(0, GRID_WIDTH - 1),
-                         randint(0, GRID_HEIGHT - 1))
+    def randomize_position(self, occupied_positions=None):
+        """
+        Randomly creates the apple position on the game board,
+        avoiding occupied cells.
+        """
+        if occupied_positions is None:
+            occupied_positions = []
+
+        while True:
+            new_position = (randint(0, GRID_WIDTH - 1),
+                            randint(0, GRID_HEIGHT - 1))
+            if new_position not in occupied_positions:
+                self.position = new_position
+                break
 
     def draw(self):
         """Draw the apple on the screen."""
-        rect = pygame.Rect(
+        rect = pg.Rect(
             (self.position[0] * GRID_SIZE,
              self.position[1] * GRID_SIZE),
             (GRID_SIZE, GRID_SIZE)
         )
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+        pg.draw.rect(screen, self.body_color, rect)
+        pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
-    def __init__(self):
+    def __init__(self, body_color=APPLE_COLOR, position=None):
         """
         Initialize the apple with a random position and color.
         Apple color is set to red with APPLE_COLOR constant.
         """
-        super().__init__(body_color=APPLE_COLOR)
-        self.randomize_position()
+        super().__init__(body_color, position)
+        if position is None:
+            self.randomize_position()
 
 
 class Snake(GameObject):
@@ -110,42 +124,43 @@ class Snake(GameObject):
     Inherits from GameObject.
     """
 
-    def __init__(self):
+    def __init__(self, body_color=SNAKE_COLOR, position=FIELD_CENTER):
         """
         Initialize the snake with a starting position and color.
-        The snake starts with a single segment at the center of the grid.
+        Args:
+            body_color (tuple): RGB color for the snake (default: SNAKE_COLOR).
+            position (tuple): Initial position (x, y) (default: FIELD_CENTER).
         """
-        super().__init__(body_color=SNAKE_COLOR)
+        super().__init__(body_color=body_color, position=position)
         self.positions = [self.position]
         self.length = 1
         self.direction = RIGHT
         self.next_direction = None
-        self.body_color = SNAKE_COLOR
         self.last = None  # Last segment position for erasing
 
     def draw(self):
         """Draw the snake on the screen."""
         for position in self.positions:
-            rect = pygame.Rect(
+            rect = pg.Rect(
                 (position[0] * GRID_SIZE, position[1] * GRID_SIZE),
                 (GRID_SIZE, GRID_SIZE)
             )
-            pygame.draw.rect(screen, self.body_color, rect)
-            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+            pg.draw.rect(screen, self.body_color, rect)
+            pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
         # Отрисовка головы змейки
-        head_rect = pygame.Rect(
+        head_rect = pg.Rect(
             (self.positions[0][0] * GRID_SIZE,
              self.positions[0][1] * GRID_SIZE),
             (GRID_SIZE, GRID_SIZE)
         )
-        pygame.draw.rect(screen, self.body_color, head_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
+        pg.draw.rect(screen, self.body_color, head_rect)
+        pg.draw.rect(screen, BORDER_COLOR, head_rect, 1)
 
     # Затирание последнего сегмента
         if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+            last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
+            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
     def update_direction(self):
         """
@@ -173,7 +188,7 @@ class Snake(GameObject):
         Updates the position of the snake and manages its length.
         """
         self.update_direction()
-        head_x, head_y = self.positions[0]
+        head_x, head_y = self.get_head_position()
         dir_x, dir_y = self.direction
         new_x = (head_x + dir_x) % GRID_WIDTH
         new_y = (head_y + dir_y) % GRID_HEIGHT
@@ -186,7 +201,7 @@ class Snake(GameObject):
         else:
             self.last = None
 
-        return new_head  # Возвращаем новую позицию головы
+        return self.get_head_position()  # Возвращаем новую позицию головы
 
     def reset(self):
         """
@@ -196,7 +211,7 @@ class Snake(GameObject):
         """
         self.positions = [self.position]
         self.length = 1
-        self.direction = RIGHT
+        self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.next_direction = None
         self.last = None
 
@@ -205,18 +220,18 @@ class GameInfo:
     """Класс для отображения игровой информации в правой панели"""
 
     def __init__(self):
-        self.font = pygame.font.Font(None, 30)
-        self.panel_rect = pygame.Rect(
+        self.font = pg.font.Font(None, 30)
+        self.panel_rect = pg.Rect(
             GAME_WIDTH, 0, INFO_PANEL_WIDTH, SCREEN_HEIGHT)
-        self.panel_color = (40, 40, 40)  # Темно-серый цвет панели
+        self.panel_color = PANEL_COLOR  # Темно-серый цвет панели
         self.score = 0
 
-    def draw(self, screen, snake_length, score):
+    def draw(self, snake_length, score):
         """Отрисовка информационной панели"""
         # Рисуем фон панели
-        pygame.draw.rect(screen, self.panel_color, self.panel_rect)
-        separator = pygame.Rect(GAME_WIDTH - 1, 0, 2, SCREEN_HEIGHT)
-        pygame.draw.rect(screen, (100, 100, 100), separator)
+        pg.draw.rect(screen, self.panel_color, self.panel_rect)
+        separator = pg.Rect(GAME_WIDTH - 1, 0, 2, SCREEN_HEIGHT)
+        pg.draw.rect(screen, SEP_COLOR, separator)
 
         # Отступы для текста
         x_pos = GAME_WIDTH + 20
@@ -224,18 +239,18 @@ class GameInfo:
         line_height = 40
 
         # Заголовок
-        title = self.font.render('Статистика', True, (255, 255, 255))
+        title = self.font.render('Статистика', True, FONT_COLOR)
         screen.blit(title, (x_pos, y_pos))
         y_pos += line_height
 
         # Длина змейки
         length_text = self.font.render(
-            f'Длина: {snake_length}', True, (255, 255, 255))
+            f'Длина: {snake_length}', True, FONT_COLOR)
         screen.blit(length_text, (x_pos, y_pos))
         y_pos += line_height
 
         # Очки
-        score_text = self.font.render(f'Очки: {score}', True, (255, 255, 255))
+        score_text = self.font.render(f'Очки: {score}', True, FONT_COLOR)
         screen.blit(score_text, (x_pos, y_pos))
         y_pos += line_height
 
@@ -249,18 +264,18 @@ class GameInfo:
 
 def handle_keys(game_object):
     """Process user input for controlling the game object."""
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            pg.quit()
             raise SystemExit
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and game_object.direction != DOWN:
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_UP and game_object.direction != DOWN:
                 game_object.next_direction = UP
-            elif event.key == pygame.K_DOWN and game_object.direction != UP:
+            elif event.key == pg.K_DOWN and game_object.direction != UP:
                 game_object.next_direction = DOWN
-            elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
+            elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
                 game_object.next_direction = LEFT
-            elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
+            elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
                 game_object.next_direction = RIGHT
 
 
@@ -270,17 +285,17 @@ def pause_game():
 
     Displays a pause message and waits for user input.
     """
-    font = pygame.font.Font(None, 36)
+    font = pg.font.Font(None, 36)
     text = font.render(
         'Game Over. Press any key to continue...', True, (255, 255, 255))
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(text, text_rect)
-    pygame.display.flip()
+    pg.display.flip()
 
     waiting = True
     while waiting:
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN or event.type == pygame.QUIT:
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN or event.type == pg.QUIT:
                 waiting = False
 
 
@@ -292,7 +307,7 @@ def main():
     nd game updates.
     """
     # Инициализация PyGame:
-    pygame.init()
+    pg.init()
     snake = Snake()
     apple = Apple()
     game_info = GameInfo()
@@ -300,46 +315,35 @@ def main():
     while True:
         # Обработка событий
         handle_keys(snake)
-
+        # Движение змейки
+        snake.move()
         # Проверка столкновения с яблоком
         if snake.get_head_position() == apple.position:
             snake.length += 1
             game_info.score += 10
-            apple.randomize_position()
-            # Проверяем, чтобы яблоко не появилось на змейке
-            while apple.position in snake.positions:
-                apple.randomize_position()
-
-        # Движение змейки
-        new_head = snake.move()
-        if (
-            new_head[0] < 0 or new_head[0] >= GRID_WIDTH
-            or new_head[1] < 0 or new_head[1] >= GRID_HEIGHT
-        ):
-            snake.reset()
-            game_info.reset()
-            pause_game()
+            apple.randomize_position(snake.positions)
 
         # Проверка столкновения с собой
-        if snake.get_head_position() in snake.positions[1:]:
+        elif snake.get_head_position() in snake.positions[1:]:
             snake.reset()
+            apple.randomize_position(snake.positions)
             game_info.reset()
             pause_game()
 
         # Отрисовка
         screen.fill(BOARD_BACKGROUND_COLOR)  # Заливаем всё поле фоном
-        game_info.draw(screen, snake.length, game_info.score)
+        game_info.draw(snake.length, game_info.score)
         # Отрисовка границ игрового поля
-        game_field_rect = pygame.Rect(
+        game_field_rect = pg.Rect(
             0,  # X-координата начала
             0,  # Y-координата начала
             GAME_WIDTH,  # Ширина
             SCREEN_HEIGHT  # Высота
         )
-        pygame.draw.rect(screen, FIELD_BORDER_COLOR, game_field_rect, 2)
+        pg.draw.rect(screen, FIELD_BORDER_COLOR, game_field_rect, 2)
         snake.draw()
         apple.draw()
-        pygame.display.update()
+        pg.display.update()
 
         # Контроль скорости
         clock.tick(SPEED)
