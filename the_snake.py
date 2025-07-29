@@ -87,14 +87,12 @@ class Apple(GameObject):
         Randomly creates the apple position on the game board,
         avoiding occupied cells.
         """
-        if occupied_positions is None:
-            occupied_positions = []
+        occupied_positions = occupied_positions or []
 
         while True:
-            new_position = (randint(0, GRID_WIDTH - 1),
-                            randint(0, GRID_HEIGHT - 1))
-            if new_position not in occupied_positions:
-                self.position = new_position
+            self.position = (randint(0, GRID_WIDTH - 1),
+                             randint(0, GRID_HEIGHT - 1))
+            if self.position not in occupied_positions:
                 break
 
     def draw(self):
@@ -107,14 +105,15 @@ class Apple(GameObject):
         pg.draw.rect(screen, self.body_color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
-    def __init__(self, body_color=APPLE_COLOR, position=None):
+    def __init__(self, occupied_positions, body_color=APPLE_COLOR,
+                 position=None):
         """
         Initialize the apple with a random position and color.
         Apple color is set to red with APPLE_COLOR constant.
         """
         super().__init__(body_color, position)
         if position is None:
-            self.randomize_position()
+            self.randomize_position(occupied_positions)
 
 
 class Snake(GameObject):
@@ -200,8 +199,6 @@ class Snake(GameObject):
             self.last = self.positions.pop()
         else:
             self.last = None
-
-        return self.get_head_position()  # Возвращаем новую позицию головы
 
     def reset(self):
         """
@@ -309,7 +306,7 @@ def main():
     # Инициализация PyGame:
     pg.init()
     snake = Snake()
-    apple = Apple()
+    apple = Apple(occupied_positions=snake.positions)
     game_info = GameInfo()
 
     while True:
